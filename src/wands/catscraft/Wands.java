@@ -1,6 +1,7 @@
 package wands.catscraft;
 
 import org.bukkit.Bukkit;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import wands.catscraft.commands.CommandManager;
 import wands.catscraft.wands.TerracottaTurner;
@@ -19,6 +20,7 @@ public class Wands extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        HandlerList.unregisterAll(this);
         terracottaTurner = null;
     }
 }

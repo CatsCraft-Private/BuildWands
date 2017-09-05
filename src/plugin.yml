@@ -1,0 +1,4 @@
+name: BuildWands
+main: wands.catscraft.Wands
+version: 0.1
+depends: [SimpleAPI,PlotSquared]

@@ -44,22 +44,15 @@ public class TerracottaTurner implements Listener, CommandListener {
             if (!block.getType().name().contains("_GLAZED_TERRACOTTA")) return;
 
             try {
-                if (!canRotate(event)) {
+                if ((!canRotate(event.getPlayer(), block.getLocation()))
+                        && (!canRotate(event))) {
                     event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
                     event.setUseItemInHand(Event.Result.DENY);
                     event.setUseInteractedBlock(Event.Result.DENY);
                     event.setCancelled(true);
                     return;
                 }
-                if (!canRotate(event.getPlayer(), block.getLocation())) {
-                    event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
-                    event.setUseItemInHand(Event.Result.DENY);
-                    event.setUseInteractedBlock(Event.Result.DENY);
-                    event.setCancelled(true);
-                    return;
-                }
-            } catch (Throwable ignored) {
-            } // Ignore Error if PlotSquared is not found XD
+            } catch (Throwable ignored) {} // Ignore Error if PlotSquared is not found XD
 
             MaterialData state = block.getState().getData();
             byte blockData = state.getData();

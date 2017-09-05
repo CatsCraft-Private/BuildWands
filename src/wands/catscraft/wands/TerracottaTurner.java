@@ -4,8 +4,6 @@ import com.intellectualcrafters.plot.object.Plot;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -17,15 +15,15 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Directional;
+import org.bukkit.material.MaterialData;
 import simple.brainsynder.api.ItemMaker;
 import wands.catscraft.commands.Command;
 import wands.catscraft.commands.CommandListener;
 
 public class TerracottaTurner implements Listener, CommandListener {
 
-    @Command(name="blockTurner")
-    public void run (Player player) {
+    @Command(name = "blockTurner")
+    public void run(Player player) {
         Item drop = player.getWorld().dropItem(player.getEyeLocation(), getWand());
         drop.setPickupDelay(0);
     }
@@ -41,30 +39,28 @@ public class TerracottaTurner implements Listener, CommandListener {
         if (stack.isSimilar(getWand())) {
             Block block = event.getClickedBlock();
             if (block == null) return;
-            if (block.getType().toString().contains("GLAZED")) return;
-            BlockState state = block.getState();
-            if (!(state instanceof Directional)) return;
-            Directional directional = ((Directional) state);
-            BlockFace face = directional.getFacing();
+            if (!block.getType().name().contains("_GLAZED_TERRACOTTA")) return;
 
-            if (!canRotate(event.getPlayer(), block.getLocation())) {
-                event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
-                event.setUseItemInHand(Event.Result.DENY);
-                event.setUseInteractedBlock(Event.Result.DENY);
-                event.setCancelled(true);
-                return;
-            }
+            try {
+                if (!canRotate(event.getPlayer(), block.getLocation())) {
+                    event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
+                    event.setUseItemInHand(Event.Result.DENY);
+                    event.setUseInteractedBlock(Event.Result.DENY);
+                    event.setCancelled(true);
+                    return;
+                }
+            } catch (Throwable ignored) {
+            } // Ignore Error if PlotSquared is not found XD
 
-            switch (face) {
-                case NORTH:
-                    directional.setFacingDirection(BlockFace.EAST);
-                case EAST:
-                    directional.setFacingDirection(BlockFace.SOUTH);
-                case SOUTH:
-                    directional.setFacingDirection(BlockFace.WEST);
-                case WEST:
-                    directional.setFacingDirection(BlockFace.NORTH);
+            MaterialData state = block.getState().getData();
+            byte blockData = state.getData();
+            // Wrap block data back to 0
+            if (blockData == 3) {
+                blockData = 0;
+            } else {
+                blockData++;
             }
+            block.setData(blockData);
         }
     }
 
@@ -86,36 +82,32 @@ public class TerracottaTurner implements Listener, CommandListener {
     }
 
     private boolean canRotate(Player player, Location location) {
-        try {
-            com.intellectualcrafters.plot.object.Location loc = new com.intellectualcrafters.plot.object.Location(location.getWorld().getName(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
-            Plot plot = loc.getPlotAbs();
-            if (plot == null) {
-                return player.hasPermission("plots.admin.rotateTerra.road");
-            } else {
-                if (plot.hasOwner()) {
-                    if (player.hasPermission("plots.admin.rotateTerra.other")) {
-                        if (plot.isOwner(player.getUniqueId())) {
-                            return true;
-                        } else if (plot.isDenied(player.getUniqueId())) {
-                            return false;
-                        } else {
-                            return player.hasPermission("plots.admin.rotateTerra.other");
-                        }
+        com.intellectualcrafters.plot.object.Location loc = new com.intellectualcrafters.plot.object.Location(location.getWorld().getName(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Plot plot = loc.getPlotAbs();
+        if (plot == null) {
+            return player.hasPermission("plots.admin.rotateTerra.road");
+        } else {
+            if (plot.hasOwner()) {
+                if (player.hasPermission("plots.admin.rotateTerra.other")) {
+                    if (plot.isOwner(player.getUniqueId())) {
+                        return true;
+                    } else if (plot.isDenied(player.getUniqueId())) {
+                        return false;
                     } else {
-                        if (plot.isOwner(player.getUniqueId())) {
-                            return true;
-                        } else if (plot.isDenied(player.getUniqueId())) {
-                            return false;
-                        } else {
-                            return player.hasPermission("plots.admin.rotateTerra.other");
-                        }
+                        return player.hasPermission("plots.admin.rotateTerra.other");
                     }
                 } else {
-                    return player.hasPermission("plots.admin.rotateTerra.unowned");
+                    if (plot.isOwner(player.getUniqueId())) {
+                        return true;
+                    } else if (plot.isDenied(player.getUniqueId())) {
+                        return false;
+                    } else {
+                        return player.hasPermission("plots.admin.rotateTerra.other");
+                    }
                 }
+            } else {
+                return player.hasPermission("plots.admin.rotateTerra.unowned");
             }
-        }catch (Exception e) {
-            return true;
         }
     }
 }

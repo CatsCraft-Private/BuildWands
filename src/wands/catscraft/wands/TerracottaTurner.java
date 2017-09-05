@@ -1,6 +1,7 @@
 package wands.catscraft.wands;
 
 import com.intellectualcrafters.plot.object.Plot;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -11,6 +12,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFlag;
@@ -42,6 +44,13 @@ public class TerracottaTurner implements Listener, CommandListener {
             if (!block.getType().name().contains("_GLAZED_TERRACOTTA")) return;
 
             try {
+                if (!canRotate(event)) {
+                    event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
+                    event.setUseItemInHand(Event.Result.DENY);
+                    event.setUseInteractedBlock(Event.Result.DENY);
+                    event.setCancelled(true);
+                    return;
+                }
                 if (!canRotate(event.getPlayer(), block.getLocation())) {
                     event.getPlayer().sendMessage("§cYou are not permitted to rotate that block.");
                     event.setUseItemInHand(Event.Result.DENY);
@@ -64,7 +73,6 @@ public class TerracottaTurner implements Listener, CommandListener {
         }
     }
 
-
     private ItemStack getWand() {
         ItemMaker maker = new ItemMaker(Material.STICK);
         maker.setName("&eTerra&6-&eRotate");
@@ -79,6 +87,19 @@ public class TerracottaTurner implements Listener, CommandListener {
                 ItemFlag.HIDE_UNBREAKABLE
         );
         return maker.create();
+    }
+
+    // Trying this out... Should Automatically handle All the other checks from other plugins xD
+    private boolean canRotate(PlayerInteractEvent e) {
+        Block block = e.getClickedBlock();
+
+        BlockPlaceEvent event = new BlockPlaceEvent(e.getClickedBlock(), block.getState(), e.getClickedBlock(), e.getPlayer().getEquipment().getItemInMainHand(), e.getPlayer(), true, EquipmentSlot.HAND);
+        try {
+            Bukkit.getPluginManager().callEvent(event);
+        } catch (IllegalStateException ex) {
+            return false;
+        }
+        return !event.isCancelled();
     }
 
     private boolean canRotate(Player player, Location location) {
